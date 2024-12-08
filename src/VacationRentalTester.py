@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 import argparse
 from .tests.test_h1 import H1TagTester
 
+
 class VacationRentalTester:
     def __init__(self, url='https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/', output_folder='test_results', headless=False):
         self.output_folder = output_folder

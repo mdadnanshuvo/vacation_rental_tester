@@ -8,13 +8,10 @@ __pycache__/
 
 # Ignore test cache and results
 .pytest_cache/
-test_results
 
 # Ignore log files
 logs/
 
-# Ignore driver files (if they are large or can be regenerated)
-drivers
 
 # Ignore OS generated files
 .DS_Store

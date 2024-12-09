@@ -55,3 +55,35 @@
 2024-12-08 10:34:00,494 - WDM - INFO - Driver [C:\Users\admin\.wdm\drivers\chromedriver\win64\131.0.6778.87\chromedriver-win32/chromedriver.exe] found in cache
 2024-12-08 12:38:09,370 - WDM - INFO - ====== WebDriver manager ======
 2024-12-08 12:38:15,671 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:16:23,907 - WDM - INFO - ====== WebDriver manager ======
+2024-12-09 13:16:23,981 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:16:24,420 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:16:24,859 - WDM - INFO - Driver [/home/w3e63/.wdm/drivers/chromedriver/linux64/131.0.6778.87/chromedriver-linux64/chromedriver] found in cache
+2024-12-09 13:18:13,735 - WDM - INFO - ====== WebDriver manager ======
+2024-12-09 13:18:13,829 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:18:14,264 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:18:14,721 - WDM - INFO - Driver [/home/w3e63/.wdm/drivers/chromedriver/linux64/131.0.6778.87/chromedriver-linux64/chromedriver] found in cache
+2024-12-09 13:19:35,867 - WDM - INFO - ====== WebDriver manager ======
+2024-12-09 13:19:35,940 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:19:36,434 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:19:36,872 - WDM - INFO - Driver [/home/w3e63/.wdm/drivers/chromedriver/linux64/131.0.6778.87/chromedriver-linux64/chromedriver] found in cache
+2024-12-09 13:21:19,931 - WDM - INFO - ====== WebDriver manager ======
+2024-12-09 13:21:20,009 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:21:20,437 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:21:20,868 - WDM - INFO - Driver [/home/w3e63/.wdm/drivers/chromedriver/linux64/131.0.6778.87/chromedriver-linux64/chromedriver] found in cache
+2024-12-09 13:23:28,720 - WDM - INFO - ====== WebDriver manager ======
+2024-12-09 13:23:28,795 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:23:29,238 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:23:29,669 - WDM - INFO - Driver [/home/w3e63/.wdm/drivers/chromedriver/linux64/131.0.6778.87/chromedriver-linux64/chromedriver] found in cache
+2024-12-09 13:24:31,894 - WDM - INFO - ====== WebDriver manager ======
+2024-12-09 13:24:31,973 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:24:32,417 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:24:32,870 - WDM - INFO - Driver [/home/w3e63/.wdm/drivers/chromedriver/linux64/131.0.6778.87/chromedriver-linux64/chromedriver] found in cache
+2024-12-09 13:25:23,688 - WDM - INFO - ====== WebDriver manager ======
+2024-12-09 13:25:23,764 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:25:24,214 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:25:24,649 - WDM - INFO - Driver [/home/w3e63/.wdm/drivers/chromedriver/linux64/131.0.6778.87/chromedriver-linux64/chromedriver] found in cache
+2024-12-09 13:35:52,843 - WDM - INFO - ====== WebDriver manager ======
+2024-12-09 13:35:52,916 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:35:53,414 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2024-12-09 13:35:53,863 - WDM - INFO - Driver [/home/w3e63/.wdm/drivers/chromedriver/linux64/131.0.6778.87/chromedriver-linux64/chromedriver] found in cache

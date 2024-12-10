@@ -1,10 +1,8 @@
 import logging
-from typing import List, Optional
-import traceback
-import time
-import pandas as pd
 import os
-import sys
+import time
+import traceback
+from typing import List, Optional
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -14,18 +12,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import (
-    WebDriverException, 
-    TimeoutException, 
+    WebDriverException,
+    TimeoutException,
     NoSuchElementException
 )
+import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
-
-
 from webdriver_manager.chrome import ChromeDriverManager
 from test_report_generator import TestReportGenerator
 
- # Import the test report generator
 
 class CurrencyFilterTester:
     def __init__(self, url: str, output_folder: str = 'test_results', log_folder: str = 'logs', headless: bool = True, timeout: int = 10, retry_attempts: int = 3):
@@ -129,45 +125,53 @@ class CurrencyFilterTester:
             # Find currency dropdown (by id: js-currency-sort-footer)
             dropdown = self._safe_find_element((By.CSS_SELECTOR, "#js-currency-sort-footer"))
             if not dropdown:
-                self.report_generator.add_h1_tag_results([{
+                result = {
                     "page_url": self.url, 
                     "testcase": "Currency dropdown", 
                     "status": "fail", 
                     "comments": "Currency dropdown not found"
-                }])
+                }
+                results.append(result)
+                self.report_generator.add_test_results('Currency Filter Test', results)
                 return results
             
             # Open dropdown and wait for smooth interaction
             if not self._safe_click(dropdown):
-                self.report_generator.add_h1_tag_results([{
+                result = {
                     "page_url": self.url, 
                     "testcase": "Currency dropdown", 
                     "status": "fail", 
                     "comments": "Currency dropdown could not be opened"
-                }])
+                }
+                results.append(result)
+                self.report_generator.add_test_results('Currency Filter Test', results)
                 return results
             
             # Find currency options using a more dynamic selector
             options = self.driver.find_elements(By.CSS_SELECTOR, "#js-currency-sort-footer .select-ul li")
             
             if not options:
-                self.report_generator.add_h1_tag_results([{
+                result = {
                     "page_url": self.url, 
                     "testcase": "Currency options", 
                     "status": "fail", 
                     "comments": "Currency options not found"
-                }])
+                }
+                results.append(result)
+                self.report_generator.add_test_results('Currency Filter Test', results)
                 return results
             
             # Get initial price
             initial_price_element = self._safe_find_element((By.XPATH, "//div[contains(@class, 'price')]"))
             if not initial_price_element:
-                self.report_generator.add_h1_tag_results([{
+                result = {
                     "page_url": self.url, 
                     "testcase": "Initial price", 
                     "status": "fail", 
                     "comments": "Initial price element not found"
-                }])
+                }
+                results.append(result)
+                self.report_generator.add_test_results('Currency Filter Test', results)
                 return results
             
             initial_price = initial_price_element.text.strip()
@@ -197,10 +201,9 @@ class CurrencyFilterTester:
                             "page_url": self.url,
                             "testcase": f"Currency: {currency_details}",
                             "status": "pass",
-                            "comments": f"Currency {currency_details} test successfull",
+                            "comments": f"Currency {currency_details} test successful",
                         }
                         results.append(result)
-                        self.report_generator.add_h1_tag_results([result])
                         continue
                     
                     # Trigger a JavaScript event to simulate the page update
@@ -217,7 +220,6 @@ class CurrencyFilterTester:
                             "comments": "Price element not found after clicking currency",
                         }
                         results.append(result)
-                        self.report_generator.add_h1_tag_results([result])
                         continue
                     
                     updated_price = updated_price_element.text.strip()
@@ -229,7 +231,6 @@ class CurrencyFilterTester:
                             "comments": f"Currency {currency_details} changed successfully",
                         }
                         results.append(result)
-                        self.report_generator.add_h1_tag_results([result])
                     else:
                         result = {
                             "page_url": self.url,
@@ -238,7 +239,6 @@ class CurrencyFilterTester:
                             "comments": f"Currency {currency_details} has changed as expected",
                         }
                         results.append(result)
-                        self.report_generator.add_h1_tag_results([result])
                 
                 except Exception as e:
                     result = {
@@ -248,9 +248,11 @@ class CurrencyFilterTester:
                         "comments": f"Error occurred: {str(e)}",
                     }
                     results.append(result)
-                    self.report_generator.add_h1_tag_results([result])
             
-            # Generate Excel report in 'test_results' folder
+            # Add results to the report
+            self.report_generator.add_test_results('Currency Filter Test', results)
+            
+            # Generate the consolidated Excel report
             self.report_generator.generate_report()
             return results
         
@@ -259,31 +261,28 @@ class CurrencyFilterTester:
                 "page_url": self.url,
                 "testcase": "Overall test", 
                 "status": "fail", 
-                "comments": f"Critical failure: {str(e)}",
-                "traceback": traceback.format_exc()
+                "comments": f"Test failed due to: {str(e)}"
             }
             results.append(error_result)
-            self.report_generator.add_h1_tag_results([error_result])
+            self.report_generator.add_test_results('Currency Filter Test', results)
             self.report_generator.generate_report()
-            return results
-        
-        finally:
-            self.driver.quit()
+            raise e
 
-def main():
-    test_url = "https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/"
-    
-    try:
-        tester = CurrencyFilterTester(url=test_url, headless=False, timeout=30)
-        results = tester.run_currency_test()
+    def main(self):
+        test_url = self.url
         
-        print("\n--- Test Results ---")
-        for result in results:
-            print(result)
-    
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        logging.exception(e)
+        try:
+            results = self.run_currency_test()
+            
+            print("\n--- Test Results ---")
+            for result in results:
+                print(result)
+        
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            logging.exception(e)
 
 if __name__ == "__main__":
-    main()
+    test_url = "https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/"
+    tester = CurrencyFilterTester(url=test_url, headless=False, timeout=30)
+    tester.main()

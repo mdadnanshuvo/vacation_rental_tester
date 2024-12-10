@@ -1,64 +1,183 @@
+import os
+import sys
+import pandas as pd
+from urllib.parse import urlparse, urljoin
+from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from urllib.parse import urlparse, urljoin
+from webdriver_manager.chrome import ChromeDriverManager
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+from selenium.common.exceptions import TimeoutException
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
+
+# Import TestReportGenerator from your existing file
+from test_report_generator import TestReportGenerator
+
 
 class H1TagTester:
-    def __init__(self, driver, base_url, sitemap_keywords=None):
-        self.driver = driver
-        self.base_url = base_url
-        self.visited_urls = set()  # Set to track visited URLs
-        self.sitemap_keywords = sitemap_keywords or ['sitemap', 'robots.txt']  # Sitemap-related keywords to skip
+    def __init__(self, url='https://www.example.com', output_folder='test_results', headless=False, max_workers=10, max_depth=3, max_links=40):
+        self.output_folder = output_folder
+        os.makedirs(self.output_folder, exist_ok=True)
 
-    def run(self, add_result_callback):
-        """
-        Test only the current page for H1 tags.
-        """
-        current_url = self.base_url  # Test the base URL
+        # Setup Chrome options
+        self.options = webdriver.ChromeOptions()
+        if headless:
+            self.options.add_argument("--headless")
+            self.options.add_argument("--disable-gpu")
+            self.options.add_argument("--window-size=1920,1080")
+            self.options.add_argument("--disable-dev-shm-usage")
+            self.options.add_argument("--no-sandbox")
+            self.options.add_argument("--disable-blink-features=AutomationControlled")
 
-        # Check if this URL has already been visited
-        if current_url in self.visited_urls:
-            print(f"Skipping {current_url} (already visited)")
-            return
+        self.options.add_argument("--start-maximized")
 
-        self.visited_urls.add(current_url)
+        self.start_url = url
+        self.start_domain = urlparse(url).netloc
+        self.results = []
+        self.visited_urls = set()
+        self.to_visit = [(url, 0)]  # Store URLs along with their depth
+        self.max_workers = max_workers  # This is set to 10 to ensure at least 10 pages are processed concurrently
+        self.max_depth = max_depth
+        self.max_links = max_links  # Max links to visit
 
-        # Visit the page
-        self.driver.get(current_url)
-        print(f"Testing {current_url}")
+    def _initialize_driver(self):
+        return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.options)
 
-        # Wait for the page to load
+    def _wait_for_page_load(self, driver):
+        """Wait for the page to finish loading."""
         try:
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.TAG_NAME, 'body'))
+            WebDriverWait(driver, 15).until(
+                lambda d: d.execute_script("return document.readyState") == "complete"
             )
         except Exception as e:
-            add_result_callback('Page Load', False, f"Error loading page: {str(e)}", current_url)
-            return
+            print(f"[WARNING] Page load timeout: {e}")
 
-        # Run the H1 tag test on the current page
-        self._test_h1_tags(add_result_callback, current_url)
-
-    def _test_h1_tags(self, add_result_callback, current_url):
-        """
-        Perform the actual test of the H1 tag for the given page URL.
-        """
+    def _handle_dynamic_content(self, driver):
+        """Handle loading dynamic content by waiting for all visible links."""
         try:
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_all_elements_located((By.XPATH, "//a[@href]"))
+            )
+        except Exception as e:
+            print(f"[WARNING] Dynamic content loading timeout: {e}")
+
+    def run_h1_tag_test(self, driver, url):
+        """Test H1 tag existence and content for the given URL."""
+        try:
+            self._wait_for_page_load(driver)
+
             # Find H1 tags
-            h1_tags = self.driver.find_elements(By.TAG_NAME, 'h1')
+            h1_tags = driver.find_elements(By.TAG_NAME, 'h1')
 
             # Test H1 tag existence
-            add_result_callback('H1 Tag Existence', bool(h1_tags), f"Found {len(h1_tags)} H1 tag(s) on {current_url}", current_url)
+            passed = bool(h1_tags)
+            comments = f"Found {len(h1_tags)} H1 tag(s) on {url}" if passed else "No H1 tags found"
+            self.results.append((url, "H1 Tag Existence", "Pass" if passed else "Fail", comments))
 
             # Test number of H1 tags
-            add_result_callback('H1 Tag Count', len(h1_tags) <= 1, f"Total H1 tags: {len(h1_tags)} on {current_url}", current_url)
+            passed = len(h1_tags) <= 1
+            comments = f"Total H1 tags: {len(h1_tags)} on {url}" if passed else f"Too many H1 tags: {len(h1_tags)}"
+            self.results.append((url, "H1 Tag Count", "Pass" if passed else "Fail", comments))
 
             # Test H1 tag content
             if h1_tags:
                 h1_text = h1_tags[0].text.strip()
-                add_result_callback('H1 Tag Content', bool(h1_text), f'H1 Text: {h1_text} on {current_url}', current_url)
-            else:
-                add_result_callback('H1 Tag Content', False, f'No H1 tags found on {current_url}', current_url)
+                passed = bool(h1_text)
+                comments = f"H1 Text: {h1_text} on {url}" if passed else "H1 Text is empty"
+                self.results.append((url, "H1 Tag Content", "Pass" if passed else "Fail", comments))
+
         except Exception as e:
-            add_result_callback('H1 Tag Test', False, f'Error on {current_url}: {str(e)}', current_url)
+            print(f"[ERROR] URL: {url} - Error during H1 tag test: {e}")
+            self.results.append((url, "H1 Tag Test", "Fail", str(e)))
+
+    def process_page(self, url, depth):
+        """Process each page and crawl its links."""
+        if depth > self.max_depth or len(self.visited_urls) >= self.max_links:
+            return
+
+        driver = self._initialize_driver()
+        retries = 3  # Number of retries for timeout errors
+        try:
+            for attempt in range(retries):
+                try:
+                    driver.get(url)
+                    self._wait_for_page_load(driver)
+
+                    # Capture final redirected URL
+                    final_url = driver.current_url.rstrip('/')
+                    final_url_parsed = urlparse(final_url)
+                    if final_url in self.visited_urls or final_url_parsed.netloc != self.start_domain:
+                        return
+
+                    self.visited_urls.add(final_url)
+                    print(f"Testing URL: {final_url} (Depth: {depth})")
+
+                    # Run H1 tag test
+                    self.run_h1_tag_test(driver, final_url)
+
+                    # Extract and queue new links from the current page only within the same domain
+                    links = driver.find_elements(By.XPATH, "//a[@href]")
+                    for link in links:
+                        href = link.get_attribute("href")
+                        if href and not href.startswith(('javascript:', '#')):
+                            resolved_url = urljoin(final_url, href).rstrip('/')
+                            parsed_resolved_url = urlparse(resolved_url)
+                            canonical_url = f"{parsed_resolved_url.scheme}://{parsed_resolved_url.netloc}{parsed_resolved_url.path}"
+                            
+                            # Only add links that belong to the same domain
+                            if canonical_url not in self.visited_urls and parsed_resolved_url.netloc == self.start_domain:
+                                self.to_visit.append((canonical_url, depth + 1))
+                    break  # Exit the retry loop if page loads successfully
+                except TimeoutException as e:
+                    if attempt < retries - 1:
+                        print(f"[WARNING] Timeout on {url}, retrying ({attempt + 1}/{retries})...")
+                        time.sleep(2)  # Wait before retrying
+                    else:
+                        print(f"[ERROR] URL: {url} - Timeout after {retries} attempts.")
+                        self.results.append((url, "Page Load", "Fail", str(e)))
+                        return
+
+        except Exception as e:
+            print(f"Error testing URL {url}: {e}")
+        finally: 
+            driver.quit()
+
+    def run_recursive_tests(self):
+        """Crawl pages recursively using multithreading."""
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            while self.to_visit and len(self.visited_urls) < self.max_links:
+                futures = {executor.submit(self.process_page, url, depth): (url, depth) for url, depth in self.to_visit[:self.max_workers]}
+                self.to_visit = self.to_visit[self.max_workers:]  # Remove the processed URLs from to_visit
+
+                for future in as_completed(futures):
+                    url, depth = futures[future]
+                    try:
+                        future.result()
+                    except Exception as e:
+                        print(f"Error processing {url}: {e}")
+
+                # Stop if max_links is reached
+                if len(self.visited_urls) >= self.max_links:
+                    break
+
+    def generate_report(self):
+        """Generate a consolidated report using TestReportGenerator."""
+        print("Generating test report...")
+        # Initialize TestReportGenerator
+        report_generator = TestReportGenerator(self.output_folder)
+
+        # Add results for H1 tag test
+        report_generator.add_test_results("H1 Tag Test", self.results)
+
+        # Generate and save the report
+        report_generator.generate_report()
+
+
+if __name__ == "__main__":
+    tester = H1TagTester(url="https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/", headless=True, max_depth=3, max_links=10, max_workers=10)
+    tester.run_recursive_tests()
+    tester.generate_report()

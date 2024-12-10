@@ -4,7 +4,7 @@ import traceback
 import time
 import pandas as pd
 import os
-
+import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -19,13 +19,19 @@ from selenium.common.exceptions import (
     NoSuchElementException
 )
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
+
+
 from webdriver_manager.chrome import ChromeDriverManager
+from test_report_generator import TestReportGenerator
+
+ # Import the test report generator
 
 class CurrencyFilterTester:
     def __init__(self, url: str, output_folder: str = 'test_results', log_folder: str = 'logs', headless: bool = True, timeout: int = 10, retry_attempts: int = 3):
         self.url = url
         self.output_folder = output_folder
-        self.log_folder = log_folder  # New parameter for log folder
+        self.log_folder = log_folder
         self.headless = headless
         self.timeout = timeout
         self.retry_attempts = retry_attempts
@@ -35,6 +41,9 @@ class CurrencyFilterTester:
         
         # Test results tracking
         self.test_results: List[dict] = []
+        
+        # Initialize the test report generator instance
+        self.report_generator = TestReportGenerator(output_folder=self.output_folder)  # Pass the output folder
         
         # Initialize driver
         self.driver = self._setup_driver()
@@ -120,22 +129,46 @@ class CurrencyFilterTester:
             # Find currency dropdown (by id: js-currency-sort-footer)
             dropdown = self._safe_find_element((By.CSS_SELECTOR, "#js-currency-sort-footer"))
             if not dropdown:
-                return [{"page_url": self.url, "testcase": "Currency dropdown", "status": "pass", "comments": "Currency dropdown found and tested successfully"}]
+                self.report_generator.add_h1_tag_results([{
+                    "page_url": self.url, 
+                    "testcase": "Currency dropdown", 
+                    "status": "fail", 
+                    "comments": "Currency dropdown not found"
+                }])
+                return results
             
             # Open dropdown and wait for smooth interaction
             if not self._safe_click(dropdown):
-                return [{"page_url": self.url, "testcase": "Currency dropdown", "status": "pass", "comments": "Currency dropdown opened and tested successfully"}]
+                self.report_generator.add_h1_tag_results([{
+                    "page_url": self.url, 
+                    "testcase": "Currency dropdown", 
+                    "status": "fail", 
+                    "comments": "Currency dropdown could not be opened"
+                }])
+                return results
             
             # Find currency options using a more dynamic selector
             options = self.driver.find_elements(By.CSS_SELECTOR, "#js-currency-sort-footer .select-ul li")
             
             if not options:
-                return [{"page_url": self.url, "testcase": "Currency options", "status": "pass", "comments": "Currency options found and tested successfully"}]
+                self.report_generator.add_h1_tag_results([{
+                    "page_url": self.url, 
+                    "testcase": "Currency options", 
+                    "status": "fail", 
+                    "comments": "Currency options not found"
+                }])
+                return results
             
             # Get initial price
             initial_price_element = self._safe_find_element((By.XPATH, "//div[contains(@class, 'price')]"))
             if not initial_price_element:
-                return [{"page_url": self.url, "testcase": "Initial price", "status": "pass", "comments": "Initial price found and tested successfully"}]
+                self.report_generator.add_h1_tag_results([{
+                    "page_url": self.url, 
+                    "testcase": "Initial price", 
+                    "status": "fail", 
+                    "comments": "Initial price element not found"
+                }])
+                return results
             
             initial_price = initial_price_element.text.strip()
             
@@ -164,9 +197,10 @@ class CurrencyFilterTester:
                             "page_url": self.url,
                             "testcase": f"Currency: {currency_details}",
                             "status": "pass",
-                            "comments": f"Currency {currency_details} tested successfully",
+                            "comments": f"Currency {currency_details} test successfull",
                         }
                         results.append(result)
+                        self.report_generator.add_h1_tag_results([result])
                         continue
                     
                     # Trigger a JavaScript event to simulate the page update
@@ -179,10 +213,11 @@ class CurrencyFilterTester:
                         result = {
                             "page_url": self.url,
                             "testcase": f"Currency: {currency_details}",
-                            "status": "pass",
+                            "status": "fail",
                             "comments": "Price element not found after clicking currency",
                         }
                         results.append(result)
+                        self.report_generator.add_h1_tag_results([result])
                         continue
                     
                     updated_price = updated_price_element.text.strip()
@@ -194,26 +229,29 @@ class CurrencyFilterTester:
                             "comments": f"Currency {currency_details} changed successfully",
                         }
                         results.append(result)
+                        self.report_generator.add_h1_tag_results([result])
                     else:
                         result = {
                             "page_url": self.url,
                             "testcase": f"Currency: {currency_details}",
                             "status": "pass",
-                            "comments": f"Currency {currency_details} changed successfully",
+                            "comments": f"Currency {currency_details} has changed as expected",
                         }
                         results.append(result)
+                        self.report_generator.add_h1_tag_results([result])
                 
                 except Exception as e:
                     result = {
                         "page_url": self.url,
                         "testcase": f"Currency: {currency_details}",
-                        "status": "pass",
+                        "status": "fail",
                         "comments": f"Error occurred: {str(e)}",
                     }
                     results.append(result)
+                    self.report_generator.add_h1_tag_results([result])
             
             # Generate Excel report in 'test_results' folder
-            self._generate_excel_report(results)
+            self.report_generator.generate_report()
             return results
         
         except Exception as e:
@@ -225,51 +263,12 @@ class CurrencyFilterTester:
                 "traceback": traceback.format_exc()
             }
             results.append(error_result)
-            self._generate_excel_report(results)
+            self.report_generator.add_h1_tag_results([error_result])
+            self.report_generator.generate_report()
             return results
         
         finally:
-            # Restore the logging level back to normal after the test
-            self.logger.setLevel(logging.INFO)
             self.driver.quit()
-
-    def _generate_excel_report(self, results: List[dict]):
-        try:
-            # Create the test_results folder if it doesn't exist
-            os.makedirs(self.output_folder, exist_ok=True)
-            
-            # Generate filename with timestamp
-            report_filename = os.path.join(self.output_folder, f"currency_filter_test_report_{time.strftime('%Y%m%d_%H%M%S')}.xlsx")
-            
-            # Convert to DataFrame
-            df = pd.DataFrame(results)
-            
-            # Ensure all desired columns are present
-            columns_order = [
-                'page_url', 'testcase', 'status', 'comments'
-            ]
-            
-            # Reorder columns
-            for col in columns_order:
-                if col not in df.columns:
-                    df[col] = ''
-            
-            df = df[columns_order]
-            
-            # Save to Excel with more formatting
-            with pd.ExcelWriter(report_filename, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name='Currency Test Results')
-                
-                # Auto-adjust column widths
-                worksheet = writer.sheets['Currency Test Results']
-                for i, col in enumerate(df.columns, 1):
-                    column_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
-                    worksheet.column_dimensions[chr(64 + i)].width = column_len
-            
-            self.logger.info(f"Test report generated: {report_filename}")
-        
-        except Exception as e:
-            self.logger.error(f"Failed to generate Excel report: {e}")
 
 def main():
     test_url = "https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/"

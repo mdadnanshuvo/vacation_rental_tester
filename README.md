@@ -107,7 +107,7 @@ To run the tests, simply execute the test scripts:
    
    python src/tests/test_scrape.py
 
-  ## Notes
+ ## Notes
 
 - **Max Links to Visit or Crawl**: You can specify the maximum number of links to visit or crawl by modifying the corresponding parameter in the method or function call. This helps limit the scope of the crawl and prevents excessive requests to the website.
 
@@ -115,4 +115,7 @@ To run the tests, simply execute the test scripts:
 
 - **Depth of Link Crawling**: The depth of link crawling can be specified in the method's parameters. This defines how many levels deep the crawler should follow links from the initial page. You can adjust this value to control how far the scraper follows internal links before stopping.
 
+## Excel File Storing
+
+All test reports will be saved in an Excel file. Each test report will be stored as a separate sheet within the Excel file. The generated Excel file will be saved in the `test_results` folder for easy access to the results of all tests.
 

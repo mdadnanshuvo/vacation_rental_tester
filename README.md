@@ -4,6 +4,7 @@
 
 The **Vacation Rental Tester** is a web scraping and testing tool designed to validate the presence and correctness of various elements on vacation rental websites. It uses Python with Selenium for browser automation, Pandas for data manipulation, and multithreading to improve the efficiency of crawling and testing.
 
+## Project Structure
 
 - **`drivers/`**: Contains WebDriver executables for various browsers like ChromeDriver and GeckoDriver.
 - **`logs/`**: Directory to store log files generated during the test runs for debugging.

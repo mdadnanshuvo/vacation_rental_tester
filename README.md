@@ -28,3 +28,9 @@ The **Vacation Rental Tester** is a web scraping and testing tool designed to va
    cd vacation_rental_tester
 
 
+2. **Set up a virtual environment (optional but recommended):**
+     
+    
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows, use venv\Scripts\activate

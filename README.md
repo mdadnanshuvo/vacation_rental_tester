@@ -23,7 +23,7 @@ The **Vacation Rental Tester** is a web scraping and testing tool designed to va
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/mdadnanshuvo/Vacation_Rental_Tester.git
-   cd Vacation_Rental_Tester
+   git clone https://github.com/mdadnanshuvo/vacation_rental_tester.git
+   cd vacation_rental_tester
 
 

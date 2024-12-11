@@ -122,7 +122,7 @@ class VacationRentalTester:
         print(f"Report saved to {report_file}")
 
 if __name__ == "__main__":
-    tester = VacationRentalTester(url="https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/", headless=True, max_depth=3, max_links=100)
+    tester = VacationRentalTester(url="https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/", headless=True, max_depth=3, max_links=300)
     tester.run_recursive_tests()
     tester.generate_report()
  

@@ -1,12 +1,11 @@
-import time
+import os
 import json
-import pandas as pd
 import traceback
+import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-
 
 class AlojamientoScraper:
     def __init__(self, url):
@@ -90,12 +89,19 @@ class AlojamientoScraper:
             return
 
         try:
+            # Create the 'test_results' folder if it doesn't exist
+            output_dir = 'test_results'
+            os.makedirs(output_dir, exist_ok=True)
+
+            # Define the full file path
+            file_path = os.path.join(output_dir, filename)
+
             # Create DataFrame
             df = pd.DataFrame([data])
 
             # Save to Excel
-            df.to_excel(filename, index=False)
-            print(f"Data saved to {filename}")
+            df.to_excel(file_path, index=False)
+            print(f"Data saved to {file_path}")
         except Exception as e:
             print(f"Error saving data to Excel: {e}")
 

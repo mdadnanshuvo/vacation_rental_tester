@@ -134,7 +134,7 @@ if __name__ == "__main__":
         url="https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/", 
         headless=True, 
         max_depth=3,
-        max_links=10  # Specify max_links to visit
+        max_links=300  # Specify max_links to visit
     )
     tester.run_recursive_tests()
     tester.generate_report()

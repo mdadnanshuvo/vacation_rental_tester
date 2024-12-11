@@ -15,7 +15,6 @@ from selenium.common.exceptions import TimeoutException
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
 
 # Import TestReportGenerator from your existing file
-from test_report_generator import TestReportGenerator
 
 
 class H1TagTester:
@@ -100,7 +99,7 @@ class H1TagTester:
             return
 
         driver = self._initialize_driver()
-        retries = 3  # Number of retries for timeout errors
+        retries = 2  # Number of retries for timeout errors
         try:
             for attempt in range(retries):
                 try:
@@ -135,7 +134,7 @@ class H1TagTester:
                 except TimeoutException as e:
                     if attempt < retries - 1:
                         print(f"[WARNING] Timeout on {url}, retrying ({attempt + 1}/{retries})...")
-                        time.sleep(2)  # Wait before retrying
+                        time.sleep(1)  # Wait before retrying
                     else:
                         print(f"[ERROR] URL: {url} - Timeout after {retries} attempts.")
                         self.results.append((url, "Page Load", "Fail", str(e)))
@@ -143,7 +142,7 @@ class H1TagTester:
 
         except Exception as e:
             print(f"Error testing URL {url}: {e}")
-        finally: 
+        finally:
             driver.quit()
 
     def run_recursive_tests(self):
@@ -165,19 +164,26 @@ class H1TagTester:
                     break
 
     def generate_report(self):
-        """Generate a consolidated report using TestReportGenerator."""
+        """Generate a consolidated report in an Excel file."""
         print("Generating test report...")
-        # Initialize TestReportGenerator
-        report_generator = TestReportGenerator(self.output_folder)
 
-        # Add results for H1 tag test
-        report_generator.add_test_results("H1 Tag Test", self.results)
+        # Create a DataFrame from the results
+        df = pd.DataFrame(self.results, columns=["URL", "Test Type", "Status", "Comments"])
 
-        # Generate and save the report
-        report_generator.generate_report()
+        # Create the output file path
+        report_file = os.path.join(self.output_folder, "h1_tag_test_report.xlsx")
+
+        # Save the DataFrame to an Excel file
+        try:
+            with pd.ExcelWriter(report_file, engine='openpyxl') as writer:
+
+                df.to_excel(writer, index=False, sheet_name='H1 Tag Test Results')
+                print(f"Report saved successfully to {report_file}")
+        except Exception as e:
+            print(f"Error generating report: {e}")
 
 
 if __name__ == "__main__":
-    tester = H1TagTester(url="https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/", headless=True, max_depth=3, max_links=10, max_workers=10)
+    tester = H1TagTester(url="https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/", headless=True, max_depth=3, max_links=50, max_workers=10)
     tester.run_recursive_tests()
     tester.generate_report()

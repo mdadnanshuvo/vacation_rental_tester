@@ -17,14 +17,14 @@ from selenium.common.exceptions import (
     NoSuchElementException
 )
 import sys
+import pandas as pd
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
 from webdriver_manager.chrome import ChromeDriverManager
-from test_report_generator import TestReportGenerator
 
 
 class CurrencyFilterTester:
-    def __init__(self, url: str, output_folder: str = 'test_results', log_folder: str = 'logs', headless: bool = True, timeout: int = 10, retry_attempts: int = 3):
+    def __init__(self, url: str, output_folder: str = 'test_results', log_folder: str = 'logs', headless: bool = False, timeout: int = 10, retry_attempts: int = 3):
         self.url = url
         self.output_folder = output_folder
         self.log_folder = log_folder
@@ -37,9 +37,6 @@ class CurrencyFilterTester:
         
         # Test results tracking
         self.test_results: List[dict] = []
-        
-        # Initialize the test report generator instance
-        self.report_generator = TestReportGenerator(output_folder=self.output_folder)  # Pass the output folder
         
         # Initialize driver
         self.driver = self._setup_driver()
@@ -132,7 +129,7 @@ class CurrencyFilterTester:
                     "comments": "Currency dropdown not found"
                 }
                 results.append(result)
-                self.report_generator.add_test_results('Currency Filter Test', results)
+                self.test_results = results  # Save results to the class variable
                 return results
             
             # Open dropdown and wait for smooth interaction
@@ -144,7 +141,7 @@ class CurrencyFilterTester:
                     "comments": "Currency dropdown could not be opened"
                 }
                 results.append(result)
-                self.report_generator.add_test_results('Currency Filter Test', results)
+                self.test_results = results  # Save results to the class variable
                 return results
             
             # Find currency options using a more dynamic selector
@@ -158,7 +155,7 @@ class CurrencyFilterTester:
                     "comments": "Currency options not found"
                 }
                 results.append(result)
-                self.report_generator.add_test_results('Currency Filter Test', results)
+                self.test_results = results  # Save results to the class variable
                 return results
             
             # Get initial price
@@ -171,7 +168,7 @@ class CurrencyFilterTester:
                     "comments": "Initial price element not found"
                 }
                 results.append(result)
-                self.report_generator.add_test_results('Currency Filter Test', results)
+                self.test_results = results  # Save results to the class variable
                 return results
             
             initial_price = initial_price_element.text.strip()
@@ -249,11 +246,8 @@ class CurrencyFilterTester:
                     }
                     results.append(result)
             
-            # Add results to the report
-            self.report_generator.add_test_results('Currency Filter Test', results)
+            self.test_results = results  # Save results to the class variable
             
-            # Generate the consolidated Excel report
-            self.report_generator.generate_report()
             return results
         
         except Exception as e:
@@ -264,9 +258,42 @@ class CurrencyFilterTester:
                 "comments": f"Test failed due to: {str(e)}"
             }
             results.append(error_result)
-            self.report_generator.add_test_results('Currency Filter Test', results)
-            self.report_generator.generate_report()
+            self.test_results = results  # Save results to the class variable
+            self.generate_report()  # Generate the report
             raise e
+
+    def generate_report(self):
+        """Generate an Excel report of the results."""
+        print("Generating test report...")
+
+        # Ensure output folder exists
+        os.makedirs(self.output_folder, exist_ok=True)
+
+        # Ensure test results are in the correct format for the DataFrame
+        formatted_results = []
+        for result in self.test_results:
+            formatted_results.append({
+                "URL": result["page_url"],
+                "Test": result["testcase"],
+                "Result": result["status"],
+                "Comments": result["comments"]
+            })
+
+        # Create DataFrame with the formatted results
+        df = pd.DataFrame(formatted_results)
+
+        # Debugging: Print the DataFrame to check the contents before saving to Excel
+        print("\nDataFrame content:\n", df)
+
+        # Define the report file path
+        report_file = os.path.join(self.output_folder, "currency_filter_test_report.xlsx")
+
+        # Save the report to Excel
+        try:
+            df.to_excel(report_file, index=False)
+            print(f"Report saved to {report_file}")
+        except Exception as e:
+            print(f"Failed to save report: {e}")
 
     def main(self):
         test_url = self.url
@@ -283,6 +310,7 @@ class CurrencyFilterTester:
             logging.exception(e)
 
 if __name__ == "__main__":
-    test_url = "https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/"
-    tester = CurrencyFilterTester(url=test_url, headless=False, timeout=30)
+    test_url = 'https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/'
+    tester = CurrencyFilterTester(url=test_url)
     tester.main()
+    tester.generate_report()

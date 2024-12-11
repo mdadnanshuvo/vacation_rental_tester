@@ -12,7 +12,7 @@ import time
 from selenium.common.exceptions import TimeoutException
 
 class VacationRentalTester:
-    def __init__(self, url='https://www.example.com', output_folder='test_results', headless=False, max_workers=10, max_depth=3, max_links=400):
+    def __init__(self, url='https://www.example.com', output_folder='test_results', headless=False, max_workers=10, max_depth=3, max_links=10):
         self.output_folder = output_folder
         os.makedirs(self.output_folder, exist_ok=True)
 
@@ -168,6 +168,6 @@ class VacationRentalTester:
         print(f"Report saved to {report_file}")
 
 if __name__ == "__main__":
-    tester = VacationRentalTester(url="https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/", headless=True, max_depth=3, max_links=10, max_workers=10)
+    tester = VacationRentalTester(url="https://www.alojamiento.io/property/apartamentos-centro-col%c3%b3n/BC-189483/", headless=True, max_depth=3, max_links=300, max_workers=10)
     tester.run_recursive_tests()
     tester.generate_report()

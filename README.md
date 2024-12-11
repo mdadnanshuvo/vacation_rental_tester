@@ -85,6 +85,7 @@ To run the tests, simply execute the test scripts:
 
 
 4. URL status code test:
+   
 
    ```bash
    
@@ -106,4 +107,12 @@ To run the tests, simply execute the test scripts:
    
    python src/tests/test_scrape.py
 
-  
+  ## Notes
+
+- **Max Links to Visit or Crawl**: You can specify the maximum number of links to visit or crawl by modifying the corresponding parameter in the method or function call. This helps limit the scope of the crawl and prevents excessive requests to the website.
+
+- **Number of Pages That Can Be Visited Simultaneously**: The number of pages that can be visited concurrently can be controlled by modifying the number of threads in Python’s `ThreadPoolExecutor` in the relevant method. This parameter controls how many pages are crawled in parallel, which can significantly improve the speed of the crawl.
+
+- **Depth of Link Crawling**: The depth of link crawling can be specified in the method's parameters. This defines how many levels deep the crawler should follow links from the initial page. You can adjust this value to control how far the scraper follows internal links before stopping.
+
+

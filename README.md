@@ -34,3 +34,76 @@ The **Vacation Rental Tester** is a web scraping and testing tool designed to va
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # On Windows, use venv\Scripts\activate
+
+3. **install dependencies:**
+     
+    
+   ```bash
+   pip install -r requirements.txt
+
+
+### WebDriver Setup
+
+WebDriver executables (ChromeDriver, GeckoDriver, etc.) must be placed in the `drivers/` folder. Ensure that the correct version of the driver is installed for your browser version.
+
+1. Download the appropriate WebDriver for your browser:
+   - [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/)
+   - [GeckoDriver (Firefox)](https://github.com/mozilla/geckodriver/releases)
+
+2. Place the WebDriver executable inside the `drivers/` folder.
+
+### Logs
+
+Logs are stored in the `logs/` directory for debugging purposes. Each test run will create a new log file detailing the scraping and validation process.
+
+
+
+## Usage
+
+### Running Tests
+
+To run the tests, simply execute the test scripts:
+
+1. H1 tag existence test:
+
+   ```bash
+   
+   python src/tests/test_h1.py
+
+2. HTML tag sequence test:
+
+   ```bash
+   
+   python src/tests/test_html_tags.py
+
+
+3. Image alt attribute test:
+
+   ```bash
+   
+   python src/tests/test_images.py
+
+
+4. URL status code test:
+
+   ```bash
+   
+   python src/tests/test_urls.py
+
+
+
+5. currency filtering test:
+
+   ```bash
+   
+   python src/tests/test_currency.py
+
+
+
+6. Scrape data from Script
+
+   ```bash
+   
+   python src/tests/test_scrape.py
+
+  
